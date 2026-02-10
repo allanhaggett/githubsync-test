@@ -29,11 +29,24 @@ sections/
   01-introduction/
     section.yaml                         # Section metadata
     01-welcome.html                      # Page activity (default)
+    02-course-handbook/                  # Book activity (directory)
+      book.yaml                          # Book metadata
+      01-getting-started.html            # Chapter 1
+      02-assessment-guide.html           # Chapter 2
+      03-key-resources.html              # Chapter 3
+      04-library-access.html             # Chapter 4
     02-course-overview.html              # Page activity
     03-notice.html                       # Label activity (via front matter)
   02-module-one/
     section.yaml
     01-lesson-one.html                   # Page activity
+    02-safety-training/                  # Lesson activity (directory)
+      lesson.yaml                        # Lesson metadata
+      01-introduction.html               # Content page
+      02-safety-rules.html               # Content page
+      03-quiz-tf.html                    # True/false question
+      04-quiz-mc.html                    # Multichoice question
+      05-review.html                     # Content page
     03-summary.html                      # Page activity
     04-external-resource.html            # URL activity (via front matter)
 ```
@@ -132,9 +145,145 @@ url: "https://docs.moodle.org"
 <p>Visit the official Moodle documentation for more information.</p>
 ```
 
+#### Book Activities
+
+A subdirectory inside a section that contains a `book.yaml` (or any subdirectory without a `lesson.yaml`) becomes a **Book** activity. Each `.html` file in the directory becomes a chapter, ordered by numeric prefix.
+
+```
+sections/
+  01-introduction/
+    02-course-handbook/
+      book.yaml
+      01-getting-started.html
+      02-assessment-guide.html
+```
+
+**book.yaml** sets book-level metadata:
+
+```yaml
+title: "Course Handbook"
+numbering: numbers
+intro: "<p>Essential information for students.</p>"
+```
+
+| Field       | Description                                                 | Default                     |
+|-------------|-------------------------------------------------------------|-----------------------------|
+| `title`     | Override the book name                                      | Derived from directory name |
+| `numbering` | Chapter numbering: `none`, `numbers`, `bullets`, `indented` | `numbers`                   |
+| `intro`     | HTML description on the book's intro page                   | Empty                       |
+
+Chapter files support front matter for per-chapter settings:
+
+```html
+---
+title: "Getting Started Guide"
+subchapter: true
+---
+<h2>Welcome</h2>
+<p>This chapter covers...</p>
+```
+
+| Field        | Description                                              | Default                     |
+|--------------|----------------------------------------------------------|-----------------------------|
+| `title`      | Override the chapter title                               | Derived from filename       |
+| `subchapter` | `true` to indent under the previous chapter              | `false`                     |
+
+#### Lesson Activities
+
+A subdirectory inside a section that contains a `lesson.yaml` becomes a **Lesson** activity. Each `.html` file becomes a lesson page — either a content page, a true/false question, or a multichoice question, controlled by front matter.
+
+```
+sections/
+  02-module-one/
+    02-safety-training/
+      lesson.yaml
+      01-introduction.html
+      02-safety-rules.html
+      03-quiz-tf.html
+      04-quiz-mc.html
+      05-review.html
+```
+
+**lesson.yaml** sets lesson-level metadata:
+
+```yaml
+title: "Safety Training"
+intro: "<p>Complete this lesson on workplace safety.</p>"
+practice: true
+retake: true
+feedback: true
+review: false
+maxattempts: 3
+progressbar: true
+```
+
+| Field         | Description                                      | Default |
+|---------------|--------------------------------------------------|---------|
+| `title`       | Override the lesson name                         | Derived from directory name |
+| `intro`       | HTML description on the lesson intro page        | Empty   |
+| `practice`    | Practice lesson — no grades recorded             | `false` |
+| `retake`      | Allow students to retake the lesson              | `true`  |
+| `feedback`    | Show feedback after answering                    | `true`  |
+| `review`      | Allow students to review their answers           | `false` |
+| `maxattempts` | Maximum number of attempts                       | `1`     |
+| `progressbar` | Show progress bar                                | `true`  |
+
+**Content pages** (default — no `type` in front matter):
+
+```html
+---
+title: "Introduction to Safety"
+---
+<h2>Welcome to Safety Training</h2>
+<p>In this lesson you will learn about workplace safety.</p>
+```
+
+A "Continue" button is automatically added. The last page links to End of Lesson.
+
+**True/false questions** — set `type: truefalse`:
+
+```html
+---
+type: truefalse
+title: "PPE Requirement Check"
+correct: true
+feedback_correct: "Correct! PPE must always be worn in designated areas."
+feedback_incorrect: "Actually, PPE IS required at all times in designated work areas."
+---
+<p>Personal protective equipment (PPE) must be worn at all times in designated work areas.</p>
+```
+
+| Field                | Description                                  |
+|----------------------|----------------------------------------------|
+| `correct`            | `true` or `false` — which answer is correct  |
+| `feedback_correct`   | Feedback when the student answers correctly   |
+| `feedback_incorrect` | Feedback when the student answers incorrectly |
+
+**Multichoice questions** — set `type: multichoice`:
+
+```html
+---
+type: multichoice
+title: "Emergency Procedure"
+answers:
+  - text: "Call your supervisor and evacuate"
+    correct: true
+    feedback: "Correct! Always alert your supervisor and evacuate safely."
+  - text: "Try to fix it yourself"
+    feedback: "No, never try to handle an emergency alone without proper training."
+  - text: "Ignore it and continue working"
+    feedback: "Never ignore an emergency situation - safety comes first."
+---
+<p>What should you do if you discover a fire in the workplace?</p>
+```
+
+Each answer has `text`, an optional `correct: true` flag (omit or set false for wrong answers), and `feedback`. Correct answers advance to the next page; incorrect answers stay on the current page.
+
 ### Front Matter Reference
 
-Front matter is optional YAML at the top of any `.html` file, delimited by `---` markers:
+Front matter is optional YAML at the top of any `.html` file, delimited by `---` markers.
+
+**Section-level activities** (files directly in a section directory):
 
 | Field     | Description                                              | Default                     |
 |-----------|----------------------------------------------------------|-----------------------------|
@@ -142,6 +291,17 @@ Front matter is optional YAML at the top of any `.html` file, delimited by `---`
 | `name`    | Override the activity name                               | Derived from filename       |
 | `url`     | External URL (required when `type: url`)                 | —                           |
 | `visible` | Show or hide the activity (`true`/`false`)               | `true`                      |
+
+**Lesson pages** (files inside a lesson directory):
+
+| Field                | Description                                              | Default                     |
+|----------------------|----------------------------------------------------------|-----------------------------|
+| `type`               | Page type: `content` (default), `truefalse`, `multichoice` | `content`                |
+| `title`              | Override the page title                                  | Derived from filename       |
+| `correct`            | Correct answer for true/false (`true`/`false`)           | `true`                      |
+| `feedback_correct`   | Feedback for correct answer                              | Empty                       |
+| `feedback_incorrect` | Feedback for incorrect answer                            | Empty                       |
+| `answers`            | List of answer options for multichoice                   | —                           |
 
 ### Step 4: Add Assets
 
